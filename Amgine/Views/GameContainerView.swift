@@ -3,7 +3,6 @@ import SwiftUI
 struct GameContainerView: View {
     @Environment(GameViewModel.self) private var game
     @State private var gravityMotion = MotionManager()
-    @State private var pressStart: Date? = nil
 
     var body: some View {
         ZStack {
@@ -21,32 +20,17 @@ struct GameContainerView: View {
             if game.gravityUnlocked || game.darkModeUnlocked {
                 VStack {
                     HStack {
-                        // Apple icon — top-left.
-                        // Short press (<0.3s): flip gravity.
-                        // Hold: sets isAppleHeld so levels can react (e.g. fill cup in Level 3).
+                        // Gravity toggle — top-left, rotates live with device orientation.
+                        // Short tap flips gravity; icon faces the same way as the phone.
                         if game.gravityUnlocked {
-                            FruitAppleIcon(color: overlayColor)
-                                .rotationEffect(.degrees((gravityMotion.verticalGravity + 1) * 90))
-                                .animation(.easeOut(duration: 0.2), value: gravityMotion.verticalGravity)
-                                .padding(20)
-                                .contentShape(Rectangle())
-                                .gesture(
-                                    DragGesture(minimumDistance: 0)
-                                        .onChanged { _ in
-                                            if pressStart == nil {
-                                                pressStart = Date()
-                                                game.setAppleHeld(true)
-                                            }
-                                        }
-                                        .onEnded { _ in
-                                            let duration = pressStart.map { -$0.timeIntervalSinceNow } ?? 0
-                                            pressStart = nil
-                                            game.setAppleHeld(false)
-                                            if duration < 0.3 {
-                                                game.flipGravity()
-                                            }
-                                        }
-                                )
+                            Button { game.flipGravity() } label: {
+                                Image(systemName: "arrow.up.arrow.down")
+                                    .font(.system(size: 16, weight: .ultraLight))
+                                    .foregroundStyle(overlayColor)
+                                    .rotationEffect(.degrees((gravityMotion.verticalGravity + 1) * 90))
+                                    .animation(.easeOut(duration: 0.2), value: gravityMotion.verticalGravity)
+                                    .padding(20)
+                            }
                         }
 
                         Spacer()
@@ -73,7 +57,6 @@ struct GameContainerView: View {
         }
     }
 
-    // Buttons are white on dark backgrounds, dark on light backgrounds.
     private var overlayColor: Color {
         game.isDarkMode ? .white.opacity(0.65) : .black.opacity(0.55)
     }
