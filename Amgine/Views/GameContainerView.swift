@@ -25,9 +25,7 @@ struct GameContainerView: View {
                         // Short press (<0.3s): flip gravity.
                         // Hold: sets isAppleHeld so levels can react (e.g. fill cup in Level 3).
                         if game.gravityUnlocked {
-                            Image(systemName: "apple.logo")
-                                .font(.system(size: 18, weight: .ultraLight))
-                                .foregroundStyle(overlayColor)
+                            FruitAppleIcon(color: overlayColor)
                                 .rotationEffect(.degrees((gravityMotion.verticalGravity + 1) * 90))
                                 .animation(.easeOut(duration: 0.2), value: gravityMotion.verticalGravity)
                                 .padding(20)
