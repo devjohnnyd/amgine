@@ -3,6 +3,7 @@ import SwiftUI
 struct GameContainerView: View {
     @Environment(GameViewModel.self) private var game
     @State private var gravityMotion = MotionManager()
+    @State private var pressStart: Date? = nil
 
     var body: some View {
         ZStack {
@@ -17,35 +18,47 @@ struct GameContainerView: View {
                     .transition(.opacity)
             }
 
-            // Persistent overlay buttons — appear once unlocked and stay for all subsequent levels.
             if game.gravityUnlocked || game.darkModeUnlocked {
                 VStack {
                     HStack {
-                        // Apple/gravity button — top-left, rotates live with device orientation.
+                        // Apple icon — top-left.
+                        // Short press (<0.3s): flip gravity.
+                        // Hold: sets isAppleHeld so levels can react (e.g. fill cup in Level 3).
                         if game.gravityUnlocked {
-                            Button {
-                                game.flipGravity()
-                            } label: {
-                                Image(systemName: "apple.logo")
-                                    .font(.system(size: 18, weight: .ultraLight))
-                                    .foregroundStyle(.white.opacity(0.65))
-                                    // Rotates 0° when upright, 180° when fully flipped.
-                                    .rotationEffect(.degrees((gravityMotion.verticalGravity + 1) * 90))
-                                    .animation(.easeOut(duration: 0.2), value: gravityMotion.verticalGravity)
-                                    .padding(20)
-                            }
+                            Image(systemName: "apple.logo")
+                                .font(.system(size: 18, weight: .ultraLight))
+                                .foregroundStyle(overlayColor)
+                                .rotationEffect(.degrees((gravityMotion.verticalGravity + 1) * 90))
+                                .animation(.easeOut(duration: 0.2), value: gravityMotion.verticalGravity)
+                                .padding(20)
+                                .contentShape(Rectangle())
+                                .gesture(
+                                    DragGesture(minimumDistance: 0)
+                                        .onChanged { _ in
+                                            if pressStart == nil {
+                                                pressStart = Date()
+                                                game.setAppleHeld(true)
+                                            }
+                                        }
+                                        .onEnded { _ in
+                                            let duration = pressStart.map { -$0.timeIntervalSinceNow } ?? 0
+                                            pressStart = nil
+                                            game.setAppleHeld(false)
+                                            if duration < 0.3 {
+                                                game.flipGravity()
+                                            }
+                                        }
+                                )
                         }
 
                         Spacer()
 
                         // Sun/moon toggle — top-right.
                         if game.darkModeUnlocked {
-                            Button {
-                                game.toggleDarkMode()
-                            } label: {
+                            Button { game.toggleDarkMode() } label: {
                                 Image(systemName: game.isDarkMode ? "sun.max" : "moon")
                                     .font(.system(size: 18, weight: .ultraLight))
-                                    .foregroundStyle(.white.opacity(0.65))
+                                    .foregroundStyle(overlayColor)
                                     .padding(20)
                             }
                         }
@@ -60,6 +73,11 @@ struct GameContainerView: View {
         .onChange(of: game.gravityUnlocked) { _, unlocked in
             if unlocked { gravityMotion.start() }
         }
+    }
+
+    // Buttons are white on dark backgrounds, dark on light backgrounds.
+    private var overlayColor: Color {
+        game.isDarkMode ? .white.opacity(0.65) : .black.opacity(0.55)
     }
 }
 

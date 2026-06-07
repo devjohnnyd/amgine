@@ -5,7 +5,7 @@ import SwiftUI
 final class GameViewModel {
     private static let progressKey  = "amgine.currentLevelIndex"
     private static let schemaKey    = "amgine.levelSchemaVersion"
-    private static let schemaVersion = 2   // bump whenever the level list changes
+    private static let schemaVersion = 3   // bump whenever the level list changes
 
     private let defaults: UserDefaults
 
@@ -17,6 +17,7 @@ final class GameViewModel {
 
     private(set) var isDarkMode: Bool = true
     private(set) var isGravityNormal: Bool = false
+    private(set) var isAppleHeld: Bool = false
 
     /// True once the apple/gravity button is unlocked (after Level 1 is solved).
     var gravityUnlocked: Bool { currentIndex >= 1 }
@@ -65,10 +66,15 @@ final class GameViewModel {
         }
     }
 
+    func setAppleHeld(_ held: Bool) {
+        isAppleHeld = held
+    }
+
     #if DEBUG
     func resetProgress() {
         isDarkMode = true
         isGravityNormal = false
+        isAppleHeld = false
         withAnimation(.easeInOut(duration: 0.35)) {
             currentIndex = 0
         }
