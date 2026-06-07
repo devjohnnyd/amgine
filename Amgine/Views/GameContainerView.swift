@@ -2,6 +2,7 @@ import SwiftUI
 
 struct GameContainerView: View {
     @Environment(GameViewModel.self) private var game
+    @State private var gravityMotion = MotionManager()
 
     var body: some View {
         ZStack {
@@ -16,23 +17,48 @@ struct GameContainerView: View {
                     .transition(.opacity)
             }
 
-            // Sun/moon toggle — unlocked after Level 2 is solved, persists for all subsequent levels.
-            if game.darkModeUnlocked {
+            // Persistent overlay buttons — appear once unlocked and stay for all subsequent levels.
+            if game.gravityUnlocked || game.darkModeUnlocked {
                 VStack {
                     HStack {
+                        // Apple/gravity button — top-left, rotates live with device orientation.
+                        if game.gravityUnlocked {
+                            Button {
+                                game.flipGravity()
+                            } label: {
+                                Image(systemName: "apple.logo")
+                                    .font(.system(size: 18, weight: .ultraLight))
+                                    .foregroundStyle(.white.opacity(0.65))
+                                    // Rotates 0° when upright, 180° when fully flipped.
+                                    .rotationEffect(.degrees((gravityMotion.verticalGravity + 1) * 90))
+                                    .animation(.easeOut(duration: 0.2), value: gravityMotion.verticalGravity)
+                                    .padding(20)
+                            }
+                        }
+
                         Spacer()
-                        Button {
-                            game.toggleDarkMode()
-                        } label: {
-                            Image(systemName: game.isDarkMode ? "sun.max" : "moon")
-                                .font(.system(size: 18, weight: .ultraLight))
-                                .foregroundStyle(.white.opacity(0.65))
-                                .padding(20)
+
+                        // Sun/moon toggle — top-right.
+                        if game.darkModeUnlocked {
+                            Button {
+                                game.toggleDarkMode()
+                            } label: {
+                                Image(systemName: game.isDarkMode ? "sun.max" : "moon")
+                                    .font(.system(size: 18, weight: .ultraLight))
+                                    .foregroundStyle(.white.opacity(0.65))
+                                    .padding(20)
+                            }
                         }
                     }
                     Spacer()
                 }
             }
+        }
+        .onAppear {
+            if game.gravityUnlocked { gravityMotion.start() }
+        }
+        .onChange(of: game.gravityUnlocked) { _, unlocked in
+            if unlocked { gravityMotion.start() }
         }
     }
 }

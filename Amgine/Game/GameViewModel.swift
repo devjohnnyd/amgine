@@ -3,7 +3,9 @@ import SwiftUI
 @MainActor
 @Observable
 final class GameViewModel {
-    private static let progressKey = "amgine.currentLevelIndex"
+    private static let progressKey  = "amgine.currentLevelIndex"
+    private static let schemaKey    = "amgine.levelSchemaVersion"
+    private static let schemaVersion = 2   // bump whenever the level list changes
 
     private let defaults: UserDefaults
 
@@ -14,14 +16,21 @@ final class GameViewModel {
     }
 
     private(set) var isDarkMode: Bool = true
+    private(set) var isGravityNormal: Bool = false
+
+    /// True once the apple/gravity button is unlocked (after Level 1 is solved).
+    var gravityUnlocked: Bool { currentIndex >= 1 }
 
     /// True once the sun/moon toggle is unlocked (after Level 2 is solved).
-    var darkModeUnlocked: Bool {
-        currentIndex >= 2
-    }
+    var darkModeUnlocked: Bool { currentIndex >= 2 }
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
+        // Reset saved progress when the level structure changes.
+        if defaults.integer(forKey: Self.schemaKey) != Self.schemaVersion {
+            defaults.set(0, forKey: Self.progressKey)
+            defaults.set(Self.schemaVersion, forKey: Self.schemaKey)
+        }
         let savedIndex = defaults.integer(forKey: Self.progressKey)
         self.currentIndex = min(max(savedIndex, 0), LevelRegistry.levels.count)
     }
@@ -49,9 +58,17 @@ final class GameViewModel {
         }
     }
 
+    func flipGravity() {
+        Haptics.success()
+        withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+            isGravityNormal.toggle()
+        }
+    }
+
     #if DEBUG
     func resetProgress() {
         isDarkMode = true
+        isGravityNormal = false
         withAnimation(.easeInOut(duration: 0.35)) {
             currentIndex = 0
         }

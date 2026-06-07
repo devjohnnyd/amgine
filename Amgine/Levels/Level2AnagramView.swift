@@ -1,7 +1,8 @@
 import SwiftUI
 
-/// Level 2 — the letters of "amgine" fall to the bottom of the screen after the
-/// Level 1 flip. The player drags them into six slots and must spell "enigma" to advance.
+/// Level 2 — the letters of "amgine" fall *upward* when the view appears (the phone
+/// is still inverted from Level 1). Once the player flips the phone right-side-up and
+/// taps the gravity button the letters fall back down, and the anagram puzzle begins.
 struct Level2AnagramView: View {
     @Environment(GameViewModel.self) private var game
 
@@ -18,27 +19,28 @@ struct Level2AnagramView: View {
     @State private var slotOccupant: [Int?] = Array(repeating: nil, count: 6)
     @State private var tileSlot: [Int?]     = Array(repeating: nil, count: 6)
 
-    @State private var isReady  = false
+    @State private var isReady   = false
+    @State private var hasFallen = false   // true once letters have landed at the bottom
     @State private var hasSolved = false
 
     var body: some View {
         GeometryReader { geo in
             let w = geo.size.width
             let h = geo.size.height
-            let slotsY = h * 0.28
-            let tilesY = h * 0.72
+            let slotsY = h * 0.30
+            let tilesY = h * 0.74
 
             ZStack {
                 Color.black.ignoresSafeArea()
 
-                // Drop slots
+                // Drop slots — always visible
                 ForEach(0..<6, id: \.self) { i in
                     SlotBorder(isOccupied: slotOccupant[i] != nil,
                                isCorrect: isCorrectlyPlaced(tileInSlot: i))
                         .position(slotPos(i, w: w, y: slotsY))
                 }
 
-                // Letter tiles (always rendered; position drives whether they're in a slot)
+                // Letter tiles — only interactive after they've fallen down
                 if isReady {
                     ForEach(0..<6, id: \.self) { i in
                         LetterTile(letter: tileLetters[i],
@@ -46,13 +48,13 @@ struct Level2AnagramView: View {
                             .position(positions[i])
                             .zIndex(activeDrag == i ? 10 : 1)
                             .gesture(
-                                DragGesture(minimumDistance: 1,
-                                            coordinateSpace: .named("board"))
+                                hasFallen
+                                ? DragGesture(minimumDistance: 1,
+                                              coordinateSpace: .named("board"))
                                     .onChanged { val in
                                         if activeDrag != i {
                                             activeDrag = i
                                             dragStart[i] = positions[i]
-                                            // Lift out of slot on drag start
                                             if let s = tileSlot[i] {
                                                 slotOccupant[s] = nil
                                                 tileSlot[i] = nil
@@ -68,6 +70,7 @@ struct Level2AnagramView: View {
                                         trySnap(tile: i, slotsY: slotsY,
                                                 w: w, tilesY: tilesY)
                                     }
+                                : nil
                             )
                     }
                 }
@@ -75,21 +78,51 @@ struct Level2AnagramView: View {
             .coordinateSpace(name: "board")
             .onAppear {
                 guard !isReady else { return }
-                // Start gathered at center (where "amgine" lived in Level 1)
+                // Start gathered at center — where "amgine" lived in Level 1
                 positions = Array(repeating: CGPoint(x: w / 2, y: h * 0.38), count: 6)
                 isReady = true
 
-                // Staggered fall to bottom row
-                let x0 = rowStartX(w: w)
-                for i in 0..<6 {
-                    withAnimation(
-                        .interpolatingSpring(stiffness: 75, damping: 10)
-                        .delay(Double(i) * 0.07 + 0.2)
-                    ) {
-                        positions[i] = CGPoint(x: x0 + CGFloat(i) * (tileSize + gap), y: tilesY)
-                    }
+                if game.isGravityNormal {
+                    // Gravity already flipped (e.g. replay) — fall straight down
+                    fallDown(w: w, tilesY: tilesY)
+                } else {
+                    // Phone is still inverted — letters fall upward
+                    fallUp(w: w, tilesY: h * 0.10)
                 }
             }
+            .onChange(of: game.isGravityNormal) { _, normal in
+                guard normal, !hasFallen else { return }
+                fallDown(w: w, tilesY: tilesY)
+            }
+        }
+    }
+
+    // MARK: - Fall animations
+
+    private func fallUp(w: CGFloat, tilesY: CGFloat) {
+        let x0 = rowStartX(w: w)
+        for i in 0..<6 {
+            withAnimation(
+                .interpolatingSpring(stiffness: 75, damping: 10)
+                .delay(Double(i) * 0.07 + 0.2)
+            ) {
+                positions[i] = CGPoint(x: x0 + CGFloat(i) * (tileSize + gap), y: tilesY)
+            }
+        }
+    }
+
+    private func fallDown(w: CGFloat, tilesY: CGFloat) {
+        let x0 = rowStartX(w: w)
+        for i in 0..<6 {
+            withAnimation(
+                .interpolatingSpring(stiffness: 75, damping: 10)
+                .delay(Double(i) * 0.07 + 0.1)
+            ) {
+                positions[i] = CGPoint(x: x0 + CGFloat(i) * (tileSize + gap), y: tilesY)
+            }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6 + 0.07 * 5) {
+            hasFallen = true
         }
     }
 
@@ -127,7 +160,6 @@ struct Level2AnagramView: View {
 
         guard let snap = best else { return }
 
-        // Bump any previous occupant back to its home position
         if let prev = slotOccupant[snap], prev != tile {
             tileSlot[prev] = nil
             let x0 = rowStartX(w: w)
