@@ -23,7 +23,7 @@ struct GameContainerView: View {
                         // Short tap flips gravity; icon faces the same way as the phone.
                         if game.gravityUnlocked {
                             Button { game.flipGravity() } label: {
-                                Image(systemName: "arrow.down")
+                                Image(systemName: game.isGravityNormal ? "arrow.down" : "arrow.up")
                                     .font(.system(size: 16, weight: .ultraLight))
                                     .foregroundStyle(overlayColor)
                                     .padding(20)
@@ -35,7 +35,7 @@ struct GameContainerView: View {
                         // Sun/moon toggle — top-right.
                         if game.darkModeUnlocked {
                             Button { game.toggleDarkMode() } label: {
-                                Image(systemName: game.isDarkMode ? "sun.max" : "moon")
+                                Image(systemName: game.isDarkMode ? "moon" : "sun.max")
                                     .font(.system(size: 18, weight: .ultraLight))
                                     .foregroundStyle(overlayColor)
                                     .padding(20)
