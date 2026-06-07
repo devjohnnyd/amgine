@@ -5,7 +5,7 @@ import SwiftUI
 final class GameViewModel {
     private static let progressKey  = "amgine.currentLevelIndex"
     private static let schemaKey    = "amgine.levelSchemaVersion"
-    private static let schemaVersion = 3   // bump whenever the level list changes
+    private static let schemaVersion = 4   // bump whenever the level list changes
 
     private let defaults: UserDefaults
 
