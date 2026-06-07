@@ -2,7 +2,6 @@ import SwiftUI
 
 struct GameContainerView: View {
     @Environment(GameViewModel.self) private var game
-    @State private var gravityMotion = MotionManager()
 
     var body: some View {
         ZStack {
@@ -24,11 +23,9 @@ struct GameContainerView: View {
                         // Short tap flips gravity; icon faces the same way as the phone.
                         if game.gravityUnlocked {
                             Button { game.flipGravity() } label: {
-                                Image(systemName: "arrow.up.arrow.down")
+                                Image(systemName: "arrow.down")
                                     .font(.system(size: 16, weight: .ultraLight))
                                     .foregroundStyle(overlayColor)
-                                    .rotationEffect(.degrees((gravityMotion.verticalGravity + 1) * 90))
-                                    .animation(.easeOut(duration: 0.2), value: gravityMotion.verticalGravity)
                                     .padding(20)
                             }
                         }
@@ -48,12 +45,6 @@ struct GameContainerView: View {
                     Spacer()
                 }
             }
-        }
-        .onAppear {
-            if game.gravityUnlocked { gravityMotion.start() }
-        }
-        .onChange(of: game.gravityUnlocked) { _, unlocked in
-            if unlocked { gravityMotion.start() }
         }
     }
 
