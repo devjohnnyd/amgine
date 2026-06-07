@@ -15,12 +15,28 @@ struct GameContainerView: View {
                 CompletionView()
                     .transition(.opacity)
             }
+
+            // Sun/moon toggle — unlocked after Level 2 is solved, persists for all subsequent levels.
+            if game.darkModeUnlocked {
+                VStack {
+                    HStack {
+                        Spacer()
+                        Button {
+                            game.toggleDarkMode()
+                        } label: {
+                            Image(systemName: game.isDarkMode ? "sun.max" : "moon")
+                                .font(.system(size: 18, weight: .ultraLight))
+                                .foregroundStyle(.white.opacity(0.65))
+                                .padding(20)
+                        }
+                    }
+                    Spacer()
+                }
+            }
         }
     }
 }
 
-/// Placeholder shown after the last implemented level is solved.
-/// Doubles as the "Level 2 — coming soon" gate for now.
 private struct CompletionView: View {
     var body: some View {
         VStack(spacing: 14) {

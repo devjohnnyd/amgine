@@ -13,6 +13,13 @@ final class GameViewModel {
         }
     }
 
+    private(set) var isDarkMode: Bool = true
+
+    /// True once the sun/moon toggle is unlocked (after Level 2 is solved).
+    var darkModeUnlocked: Bool {
+        currentIndex >= 2
+    }
+
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         let savedIndex = defaults.integer(forKey: Self.progressKey)
@@ -24,12 +31,10 @@ final class GameViewModel {
         return LevelRegistry.levels[currentIndex]
     }
 
-    /// True once the player has cleared every implemented level.
     var didFinishAllLevels: Bool {
         currentIndex >= LevelRegistry.levels.count
     }
 
-    /// Called by a level's view when its hidden condition is satisfied.
     func solveCurrentLevel() {
         guard !didFinishAllLevels else { return }
         Haptics.success()
@@ -38,9 +43,15 @@ final class GameViewModel {
         }
     }
 
+    func toggleDarkMode() {
+        withAnimation(.easeInOut(duration: 0.4)) {
+            isDarkMode.toggle()
+        }
+    }
+
     #if DEBUG
-    /// Developer-only escape hatch while tuning hidden interactions.
     func resetProgress() {
+        isDarkMode = true
         withAnimation(.easeInOut(duration: 0.35)) {
             currentIndex = 0
         }
