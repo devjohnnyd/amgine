@@ -1,8 +1,5 @@
 import SwiftUI
 
-/// Level 2 — the letters of "amgine" fall *upward* when the view appears (the phone
-/// is still inverted from Level 1). Once the player flips the phone right-side-up and
-/// taps the gravity button the letters fall back down, and the anagram puzzle begins.
 struct Level2AnagramView: View {
     @Environment(GameViewModel.self) private var game
 
@@ -20,7 +17,7 @@ struct Level2AnagramView: View {
     @State private var tileSlot: [Int?]     = Array(repeating: nil, count: 6)
 
     @State private var isReady   = false
-    @State private var hasFallen = false   // true once letters have landed at the bottom
+    @State private var hasFallen = false
     @State private var hasSolved = false
 
     var body: some View {
@@ -78,35 +75,16 @@ struct Level2AnagramView: View {
             .coordinateSpace(name: "board")
             .onAppear {
                 guard !isReady else { return }
-                // Start gathered at center — where "amgine" lived in Level 1
                 positions = Array(repeating: CGPoint(x: w / 2, y: h * 0.38), count: 6)
                 isReady = true
 
                 if game.isGravityNormal {
-                    // Gravity already flipped (e.g. replay) — fall straight down
                     fallDown(w: w, tilesY: tilesY)
-                } else {
-                    // Phone is still inverted — letters fall upward
-                    fallUp(w: w, tilesY: h * 0.10)
                 }
             }
             .onChange(of: game.isGravityNormal) { _, normal in
                 guard normal, !hasFallen else { return }
                 fallDown(w: w, tilesY: tilesY)
-            }
-        }
-    }
-
-    // MARK: - Fall animations
-
-    private func fallUp(w: CGFloat, tilesY: CGFloat) {
-        let x0 = rowStartX(w: w)
-        for i in 0..<6 {
-            withAnimation(
-                .interpolatingSpring(stiffness: 75, damping: 10)
-                .delay(Double(i) * 0.07 + 0.2)
-            ) {
-                positions[i] = CGPoint(x: x0 + CGFloat(i) * (tileSize + gap), y: tilesY)
             }
         }
     }
@@ -186,6 +164,7 @@ struct Level2AnagramView: View {
         }
         guard correct else { return }
         hasSolved = true
+        game.revealDarkModeButton()
         game.solveCurrentLevel()
     }
 }

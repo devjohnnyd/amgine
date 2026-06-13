@@ -16,34 +16,35 @@ struct GameContainerView: View {
                     .transition(.opacity)
             }
 
-            if game.gravityUnlocked || game.darkModeUnlocked {
+            if game.gravityButtonVisible || game.darkModeButtonVisible {
                 VStack {
                     HStack {
-                        // Gravity toggle — top-left, rotates live with device orientation.
-                        // Short tap flips gravity; icon faces the same way as the phone.
-                        if game.gravityUnlocked {
+                        if game.gravityButtonVisible {
                             Button { game.flipGravity() } label: {
                                 Image(systemName: game.isGravityNormal ? "arrow.down" : "arrow.up")
                                     .font(.system(size: 16, weight: .ultraLight))
                                     .foregroundStyle(overlayColor)
                                     .padding(20)
                             }
+                            .transition(.opacity.combined(with: .scale))
                         }
 
                         Spacer()
 
-                        // Sun/moon toggle — top-right.
-                        if game.darkModeUnlocked {
+                        if game.darkModeButtonVisible {
                             Button { game.toggleDarkMode() } label: {
                                 Image(systemName: game.isDarkMode ? "moon" : "sun.max")
                                     .font(.system(size: 18, weight: .ultraLight))
                                     .foregroundStyle(overlayColor)
                                     .padding(20)
                             }
+                            .transition(.opacity.combined(with: .scale))
                         }
                     }
                     Spacer()
                 }
+                .animation(.easeInOut(duration: 0.25), value: game.gravityButtonVisible)
+                .animation(.easeInOut(duration: 0.25), value: game.darkModeButtonVisible)
             }
         }
     }
